@@ -5,15 +5,10 @@ from dataclasses import dataclass
 
 @dataclass
 class Parameter():
-    def __init__(self, time, theta, a, b) -> None:
-        self.__time = time
+    def __init__(self, theta, a, b) -> None:
         self.__theta = theta
         self.__a = a
         self.__b = b
-
-    @property
-    def time(self):
-        return self.__time
     
     @property
     def theta(self):
@@ -27,12 +22,13 @@ class Parameter():
     def b(self):
         return self.__b
 
+
 parameters = [
-    Parameter(  time=-0.2,    theta=-1/3*np.pi,   a=1.2,  b=0.25  ),
-    Parameter(  time=-0.05,   theta=-1/12*np.pi,  a=-5.0, b=0.1   ),
-    Parameter(  time=0.0,     theta=0.0,          a=30.0, b=0.1   ),
-    Parameter(  time=0.05,    theta=1/12*np.pi,   a=-7.5, b=0.1   ),
-    Parameter(  time=0.3,     theta=1/2*np.pi,    a=0.75, b=0.4   )
+    Parameter(  theta=-1/3*np.pi,   a=1.2,  b=0.25  ),
+    Parameter(  theta=-1/12*np.pi,  a=-5.0, b=0.1   ),
+    Parameter(  theta=0.0,          a=30.0, b=0.1   ),
+    Parameter(  theta=1/12*np.pi,   a=-7.5, b=0.1   ),
+    Parameter(  theta=1/2*np.pi,    a=0.75, b=0.4   )
 ]
 
 period = 1.0
