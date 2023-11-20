@@ -49,15 +49,42 @@ def find_peaks(z: list, time:list):
 
 
 def main():
-    time:list = np.arange(-np.pi,np.pi,0.008)   # start,stop,step
-    T=np.pi*2
-    angular_frequency = (2*np.pi)/T
+    time_pi:list = np.arange(-np.pi,np.pi,0.008)   # start,stop,step
+    T_pi=np.pi*2
+    angular_frequency_pi = (2*np.pi)/T_pi
 
-    excelent_ppg = PPG(1, 0.1999, -1.5161, 0.8186, 0.6303, 1.0225)
-    z = calculate_ppg(excelent_ppg, time, angular_frequency)
-    p_coord, n_coord = find_peaks(z, time)
+    time_1:list = np.arange(0,1,0.008)   # start,stop,step
+    T_1=1
+    angular_frequency_1 = (2*np.pi)/T_1
 
-    plt.plot(time, z)
+    # generates a perfect synthetic ppg
+    synthetic_ppg = PPG(1, 0.1999, -1.5161, 0.8186, 0.6303, 1.0225)
+    
+    # calculate the z wave and find peaks
+    z = calculate_ppg(synthetic_ppg, time_pi, angular_frequency_pi)
+    p_coord, n_coord = find_peaks(z, time_pi)
+    print(f"Positivas:{p_coord}")
+    
+    # re-builds the same signal with time going from 0 to 1
+    # this is needed so we can find b
+    new_z = calculate_ppg(synthetic_ppg, time_1, angular_frequency_1)
+    new_p_coord, new_n_coord = find_peaks(new_z, time_1)
+    print(f"Novas Positivas:{new_p_coord}")
+    
+    # gather the constants
+    peak_1 = p_coord[0][1]
+    peak_2 = p_coord[1][1]
+    theta_1 = p_coord[0][0]
+    theta_2 = p_coord[1][0]
+    b_1 = new_p_coord[0][0] * 2
+    b_2 = (1 - new_p_coord[1][0]) * 2
+
+    # reconstruct the PPG from the constants we found
+    reconstructed_ppg = PPG(peak_1, peak_2, theta_1, theta_2, b_1, b_2)
+    reconstructed_ppg_wave = calculate_ppg(reconstructed_ppg, time_pi, angular_frequency_pi)
+
+    plt.plot(time_pi, z)
+    plt.plot(time_pi, reconstructed_ppg_wave)
     plt.show()
 
 
