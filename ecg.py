@@ -1,37 +1,8 @@
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
-from dataclasses import dataclass
-from typing import List
+from utils import *
 
-
-@dataclass
-class Gaussian():
-    def __init__(self, theta, a, b) -> None:
-        self.__theta = theta
-        self.__a = a
-        self.__b = b
-    
-    @property
-    def theta(self):
-        return self.__theta
-    
-    @property
-    def a(self):
-        return self.__a
-    
-    @property
-    def b(self):
-        return self.__b
-
-@dataclass
-class GaussianSignal():
-    def __init__(self, gaussians: List[Gaussian]) -> None:
-        self.__gaussians = gaussians
-
-    @property
-    def gaussians(self):
-        return self.__gaussians
 
 # time vector from 0 to 1
 time1 = np.arange(0, 1, 0.008)
