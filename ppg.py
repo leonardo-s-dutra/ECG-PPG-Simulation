@@ -1,18 +1,13 @@
 import matplotlib.pyplot as plt
+from dataset import Build_Dataset
 from dataclasses import dataclass
 import scipy as sp
 import numpy as np
 import math
 
-# time vector from -π to +π
-time_pi:list = np.arange(-np.pi,np.pi,0.008)
-T_pi=np.pi*2
-angular_frequency_pi = (2*np.pi)/T_pi
-
-# time vector from 0 to 1
-time_1:list = np.arange(0,1,0.008)
-T_1=1
-angular_frequency_1 = (2*np.pi)/T_1
+time:list = np.arange(0,1,0.008)
+T=1
+angular_frequency = (2*np.pi)/T
 
 @dataclass
 class PPG:
@@ -24,7 +19,7 @@ class PPG:
     b_2: float
 
 
-def calculate_ppg(ppg:PPG, time:list, angular_frequency:float):
+def build_ppg(ppg:PPG, time:list, angular_frequency:float):
     z = list()
     for t in time:
         x_t = np.cos(angular_frequency*(t - time[0]) - np.pi)
@@ -41,31 +36,28 @@ def calculate_ppg(ppg:PPG, time:list, angular_frequency:float):
 def find_peaks(z: list, time:list):
     z = np.asarray(z) 
 
-    p_peaks, _ = sp.signal.find_peaks(z)
+    p_peaks, _ = sp.signal.find_peaks(z, prominence=0.05)
     n_peaks, _ = sp.signal.find_peaks(-z)
 
     p_coord = list(zip(time[p_peaks], z[p_peaks]))
     n_coord = list(zip(time[n_peaks], z[n_peaks]))
 
+    print(p_coord)
+
     return p_coord, n_coord
 
-def get_ppg_constants(ppg:PPG, z:list):
+def get_ppg_constants(z:list):
+    p_coord, n_coord = find_peaks(z, time)
 
-    p_coord, n_coord = find_peaks(z, time_pi)
-    print(f"Positivas:{p_coord}")
+    # Theta values calculated using linear conversion from range [0,1] to [-π,π]
+    # ((old_value - old_min) / (old_max - old_min)) * (new_max - new_min) + new_min
 
-    # re-builds the same signal with time going from 0 to 1
-    # this is needed so we can find b
-    new_z = calculate_ppg(ppg, time_1, angular_frequency_1)
-    new_p_coord, new_n_coord = find_peaks(new_z, time_1)
-    print(f"Novas Positivas:{new_p_coord}")
-
-    peak_1 = p_coord[0][1]
-    peak_2 = p_coord[1][1]
-    theta_1 = p_coord[0][0]
-    theta_2 = p_coord[1][0]
-    b_1 = new_p_coord[0][0] * 2
-    b_2 = (1 - new_p_coord[1][0]) * 2
+    peak_1  = p_coord[0][1]
+    peak_2  = p_coord[1][1]
+    theta_1 = ((p_coord[0][0] - 0) / (1 - 0)) * (2*np.pi) - np.pi
+    theta_2 = ((p_coord[1][0] - 0) / (1 - 0)) * (2*np.pi) - np.pi
+    b_1     = p_coord[0][0] * 2
+    b_2     = (1 - p_coord[1][0]) * 2
     
     return peak_1, peak_2, theta_1, theta_2, b_1, b_2
 
@@ -73,22 +65,24 @@ def get_ppg_constants(ppg:PPG, z:list):
 
 def main():
     # generates a perfect synthetic ppg
-    synthetic_ppg = PPG(1, 0.1999, -1.5161, 0.8186, 0.6303, 1.0225)
+    #synthetic_ppg = PPG(1.014483752077213, 0.20107099910767365, -1.4828317324943823, 0.7791149780902686, 0.528, 0.752)
     
     # calculate the z wave
-    synthetic_z = calculate_ppg(synthetic_ppg, time_pi, angular_frequency_pi)
+    #synthetic_z = build_ppg(synthetic_ppg, time, angular_frequency)
 
     # get constants
-    peak_1, peak_2, theta_1, theta_2, b_1, b_2 = get_ppg_constants(synthetic_ppg, synthetic_z)
-    
+
+    real_ppg = Build_Dataset()
+    peak_1, peak_2, theta_1, theta_2, b_1, b_2 = get_ppg_constants(real_ppg)
+    print(peak_1, peak_2, theta_1, theta_2, b_1, b_2)
     # reconstruct the PPG from the constants we found
     reconstructed_ppg = PPG(peak_1, peak_2, theta_1, theta_2, b_1, b_2)
 
     # calculate the new z wave
-    reconstructed_ppg_wave = calculate_ppg(reconstructed_ppg, time_pi, angular_frequency_pi)
+    reconstructed_ppg_wave = build_ppg(reconstructed_ppg, time, angular_frequency)
 
-    plt.plot(time_pi, synthetic_z)
-    plt.plot(time_pi, reconstructed_ppg_wave)
+    plt.plot(real_ppg)
+    plt.plot(reconstructed_ppg_wave)
     plt.show()
 
 
