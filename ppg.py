@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from dataset import Build_Dataset
+from dataset import Get_Real_Dataset
 from dataclasses import dataclass
 import scipy as sp
 import numpy as np
@@ -46,6 +46,11 @@ def find_peaks(z: list, time:list):
 
     return p_coord, n_coord
 
+def find_last_zero(time: np.array, signal: np.array):
+    for i in range(0, len(signal)):
+        if signal[i] > 0.1265:
+            return time[i]
+
 def get_ppg_constants(z:list):
     p_coord, n_coord = find_peaks(z, time)
 
@@ -56,7 +61,7 @@ def get_ppg_constants(z:list):
     peak_2  = p_coord[1][1]
     theta_1 = ((p_coord[0][0] - 0) / (1 - 0)) * (2*np.pi) - np.pi
     theta_2 = ((p_coord[1][0] - 0) / (1 - 0)) * (2*np.pi) - np.pi
-    b_1     = p_coord[0][0] * 2
+    b_1     = 2 * (p_coord[0][0] - find_last_zero(time, z))
     b_2     = (1 - p_coord[1][0]) * 2
     
     return peak_1, peak_2, theta_1, theta_2, b_1, b_2
@@ -64,25 +69,22 @@ def get_ppg_constants(z:list):
 
 
 def main():
-    # generates a perfect synthetic ppg
     #synthetic_ppg = PPG(1.014483752077213, 0.20107099910767365, -1.4828317324943823, 0.7791149780902686, 0.528, 0.752)
     
-    # calculate the z wave
-    #synthetic_z = build_ppg(synthetic_ppg, time, angular_frequency)
+    # get a real PPG signal
+    real_ppg, _ = Get_Real_Dataset()
 
-    # get constants
-
-    real_ppg = Build_Dataset()
+    # get constants for that PPG
     peak_1, peak_2, theta_1, theta_2, b_1, b_2 = get_ppg_constants(real_ppg)
-    print(peak_1, peak_2, theta_1, theta_2, b_1, b_2)
+    
     # reconstruct the PPG from the constants we found
     reconstructed_ppg = PPG(peak_1, peak_2, theta_1, theta_2, b_1, b_2)
 
     # calculate the new z wave
     reconstructed_ppg_wave = build_ppg(reconstructed_ppg, time, angular_frequency)
 
-    plt.plot(real_ppg)
-    plt.plot(reconstructed_ppg_wave)
+    plt.plot(time, real_ppg)
+    plt.plot(time, reconstructed_ppg_wave)
     plt.show()
 
 
