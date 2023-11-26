@@ -2,6 +2,7 @@ import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
 from utils import *
+from dataset import Get_Real_Dataset
 
 
 # time vector from 0 to 1
@@ -27,8 +28,8 @@ def calculate_signal(signal: GaussianSignal, time: np.array, angular_frequency: 
 
 
 def find_signal_peaks(signal: np.array, time: np.array):
-    p_peaks, _ = sp.signal.find_peaks(signal)
-    n_peaks, _ = sp.signal.find_peaks(-signal)
+    p_peaks, _ = sp.signal.find_peaks(signal, prominence=0.1)
+    n_peaks, _ = sp.signal.find_peaks(-signal, prominence=0.1)
 
     p_coord = list(zip(time[p_peaks], signal[p_peaks]))
     n_coord = list(zip(time[n_peaks], signal[n_peaks]))
@@ -37,29 +38,24 @@ def find_signal_peaks(signal: np.array, time: np.array):
 
 def find_last_zero(time: np.array, signal: np.array):
     for i in range(0, len(signal)):
-        if signal[i] > 0.001:
+        if signal[i] > 0.34:
             return time[i]
 
 
-def get_signal_parameters(signal_constants: GaussianSignal, signal: np.array) -> GaussianSignal:
-    p_coord, n_coord = find_signal_peaks(signal, time2)
+def get_signal_parameters(signal: np.array):
+    p_coord, n_coord = find_signal_peaks(signal, time1)
     coord = p_coord + n_coord
     coord.sort()
 
-    new_signal = calculate_signal(signal_constants, time1, angular_frequency1)
-    new_p_coord, new_n_coord = find_signal_peaks(new_signal, time1)
-    new_coord = new_p_coord + new_n_coord
-    new_coord.sort()
-
     B = []
-    B.append(2*(new_coord[0][0] - find_last_zero(time1, new_signal)))
-    B.append(2*(new_coord[2][0] - new_coord[1][0]))
-    B.append(2*(new_coord[3][0] - new_coord[2][0]))
-    B.append(2*(new_coord[3][0] - new_coord[2][0]))
-    B.append(2*(new_coord[4][0] - new_coord[3][0]))
+    B.append(2*(coord[0][0] - find_last_zero(time1, signal)))
+    B.append(2*(coord[2][0] - coord[1][0]))
+    B.append(2*(coord[3][0] - coord[2][0]))
+    B.append(2*(coord[3][0] - coord[2][0]))
+    B.append(2*(coord[4][0] - coord[3][0]))
 
     A = [coord_[1] for coord_ in coord]
-    THETA = [coord_[0] for coord_ in coord]
+    THETA = [coord_[0]*(2*np.pi)-np.pi for coord_ in coord]
 
     parameters = [Gaussian(theta=THETA[i], a=A[i], b=B[i]) for i in range(len(coord))]
 
@@ -74,15 +70,13 @@ synthethic_ecg = GaussianSignal([
     Gaussian(  theta=1/2*np.pi,    a=0.3,   b=0.4   )
 ])
 
-z = calculate_signal(synthethic_ecg, time2, angular_frequency2)
+_, real_ecg = Get_Real_Dataset()
+real_ecg = real_ecg - 0.3
 
-reconstructed_ecg = get_signal_parameters(synthethic_ecg, z)
+real_ecg_parameters = get_signal_parameters(real_ecg)
 
-z2 = calculate_signal(reconstructed_ecg, time2, angular_frequency2)
+reconstructed_ecg = calculate_signal(real_ecg_parameters, time1, angular_frequency1)
 
-plt.plot(time2, z)
-plt.plot(time2, z2)
-
-#ax = plt.axes(projection='3d')
-#ax.plot3D(x, y, z, 'gray')
+plt.plot(time1, real_ecg)
+plt.plot(time1, reconstructed_ecg)
 plt.show()
